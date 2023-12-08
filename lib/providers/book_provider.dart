@@ -8,10 +8,6 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:vocsy_epub_viewer/epub_viewer.dart';
 
-// import 'package:vocsy_epub_viewer/model/enum/epub_scroll_direction.dart';
-// import 'package:vocsy_epub_viewer/model/epub_locator.dart';
-// import 'package:vocsy_epub_viewer/utils/util.dart';
-
 class BookProvider {
   int id;
   String title;

@@ -56,14 +56,14 @@ class _BookListScreenState extends State<BookListScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Open Book'),
-          content: Text('Do you want to open ${book.title}?'),
+          title: const Text('Ler Livro'),
+          content: Text('Você que abrir ${book.title}?'),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: const Text('Cancel'),
+              child: const Text('Cancelar'),
             ),
             TextButton(
               onPressed: () async {
@@ -74,7 +74,7 @@ class _BookListScreenState extends State<BookListScreen> {
 
                 setState(() {});
               },
-              child: const Text('Open'),
+              child: const Text('Abrir'),
             ),
           ],
         );
@@ -88,14 +88,14 @@ class _BookListScreenState extends State<BookListScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Download Book'),
-          content: Text('Do you want to download ${book.title}?'),
+          title: const Text('Download do Livro'),
+          content: Text('Você quer fazer o download de ${book.title}?'),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: const Text('Cancel'),
+              child: const Text('Cancelar'),
             ),
             TextButton(
               onPressed: () async {
@@ -148,11 +148,15 @@ class _BookListScreenState extends State<BookListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Book Store'),
+        title: const Text(
+          'Estante Virtual',
+        ),
+        backgroundColor: Colors.deepOrange,
         actions: [
           IconButton(
             onPressed: () {
-              Navigator.pushNamed(context, '/favorite-books');
+              Navigator.pushNamed(context, '/favorite-books',
+                  arguments: _favoriteBooks.toList());
             },
             icon: const Icon(Icons.favorite),
           ),
@@ -171,7 +175,7 @@ class _BookListScreenState extends State<BookListScreen> {
             );
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(
-              child: Text('No books available'),
+              child: Text('Não há livros disponíveis'),
             );
           } else {
             return GridView.builder(
@@ -188,20 +192,54 @@ class _BookListScreenState extends State<BookListScreen> {
                     _openOrDownloadBook(context, book);
                   },
                   child: Card(
-                    child: Column(
-                      children: [
-                        Image.network(book.cover_url, height: 100.0),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              Text(book.title),
-                              Text(book.author),
+                              _buildFavoriteIcon(book),
                             ],
                           ),
-                        ),
-                      ],
+                          Flexible(
+                            child: FutureBuilder<bool>(
+                              future: book.isDownloaded(),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return CircularProgressIndicator();
+                                } else if (snapshot.hasError) {
+                                  return Text('Error: ${snapshot.error}');
+                                } else {
+                                  bool isDownloaded = snapshot.data ?? false;
+                                  return isDownloaded
+                                      ? Image.network(book.cover_url,
+                                          height: 100.0,
+                                          alignment:
+                                              AlignmentDirectional.center)
+                                      : ColorFiltered(
+                                          colorFilter: ColorFilter.mode(
+                                              Colors.white,
+                                              BlendMode.saturation),
+                                          child: Image.network(book.cover_url,
+                                              height: 100.0,
+                                              alignment:
+                                                  AlignmentDirectional.center),
+                                        );
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            book.title,
+                            textAlign: TextAlign.left,
+                          ),
+                          Text(book.author, textAlign: TextAlign.left),
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -210,6 +248,27 @@ class _BookListScreenState extends State<BookListScreen> {
           }
         },
       ),
+    );
+  }
+
+  Widget _buildFavoriteIcon(BookProvider book) {
+    final isFavorite = _favoriteBooks.contains(book.id);
+
+    return IconButton(
+      icon: Icon(
+        isFavorite ? Icons.favorite : Icons.favorite_border,
+        color: isFavorite ? Colors.red : null,
+      ),
+      onPressed: () {
+        setState(() {
+          if (isFavorite) {
+            _favoriteBooks.remove(book.id);
+          } else {
+            _favoriteBooks.add(book.id);
+          }
+          _savePreferences();
+        });
+      },
     );
   }
 }

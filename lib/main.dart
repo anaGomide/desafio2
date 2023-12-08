@@ -1,3 +1,4 @@
+import 'package:desafio2/screens/book_favorite_screen.dart';
 import 'package:desafio2/screens/book_list_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -18,6 +19,12 @@ class MyApp extends StatelessWidget {
       home: const BookListScreen(),
       routes: {
         BookListScreen.routeName: (context) => const BookListScreen(),
+        BookFavoriteScreen.routeName: (context) {
+          final List<int>? favoriteBooks =
+              ModalRoute.of(context)?.settings.arguments as List<int>?;
+
+          return BookFavoriteScreen(favoriteBooks: favoriteBooks ?? []);
+        },
       },
     );
   }
