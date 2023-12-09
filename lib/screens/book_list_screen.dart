@@ -42,8 +42,7 @@ class _BookListScreenState extends State<BookListScreen> {
         await _downloadAndOpenBook(context, book);
       }
     } catch (e) {
-      print('Error handling book: $e');
-      // Lida com o erro (exibição de mensagem, etc.)
+      _handleError(e);
     }
   }
 
@@ -54,31 +53,17 @@ class _BookListScreenState extends State<BookListScreen> {
     // ignore: use_build_context_synchronously
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Ler Livro'),
-          content: Text('Você que abrir ${book.title}?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(context);
+      builder: (context) => _buildAlertDialog(
+        title: 'Ler o Livro',
+        content: 'Você quer ler ${book.title}?',
+        onConfirm: () async {
+          Navigator.pop(context);
 
-                // Abre diretamente a página específica do plugin após o download
-                await _openBook(context, book, filePath);
+          await _openBook(context, book, filePath);
 
-                setState(() {});
-              },
-              child: const Text('Abrir'),
-            ),
-          ],
-        );
-      },
+          setState(() {});
+        },
+      ),
     );
   }
 
@@ -86,33 +71,18 @@ class _BookListScreenState extends State<BookListScreen> {
       BuildContext context, BookProvider book) async {
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Download do Livro'),
-          content: Text('Você quer fazer o download de ${book.title}?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(context);
+      builder: (context) => _buildAlertDialog(
+        title: 'Download de Livro',
+        content: 'Você quer fazer o download ${book.title}?',
+        onConfirm: () async {
+          Navigator.pop(context);
 
-                // Chama o método para fazer o download do livro
-                String filePath = await book.downloadBook(
-                    book.download_url, "${book.id}_${book.title}.epub");
+          String filePath = await book.downloadBook(
+              book.download_url, "${book.id}_${book.title}.epub");
 
-                // Abre diretamente a página específica do plugin após o download
-                await _openDownloadedBook(context, book);
-              },
-              child: const Text('Download'),
-            ),
-          ],
-        );
-      },
+          await _openDownloadedBook(context, book);
+        },
+      ),
     );
   }
 
@@ -144,13 +114,44 @@ class _BookListScreenState extends State<BookListScreen> {
     );
   }
 
+  void _handleError(dynamic error) {
+    print('Error handling book: $error');
+    showDialog(
+      context: context,
+      builder: (context) => _buildAlertDialog(
+        title: 'Erro',
+        content: 'Ocorreu um erro ao abrir o livro',
+        onConfirm: () => Navigator.pop(context),
+      ),
+    );
+  }
+
+  Widget _buildAlertDialog({
+    required String title,
+    required String content,
+    required VoidCallback onConfirm,
+  }) {
+    return AlertDialog(
+      title: Text(title),
+      content: Text(content),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        TextButton(
+          onPressed: onConfirm,
+          child: const Text('Confirmar'),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Estante Virtual',
-        ),
+        title: const Text('Estante Virtual'),
         backgroundColor: Colors.deepOrange,
         actions: [
           IconButton(
@@ -175,7 +176,7 @@ class _BookListScreenState extends State<BookListScreen> {
             );
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(
-              child: Text('Não há livros disponíveis'),
+              child: Text('No available books'),
             );
           } else {
             return GridView.builder(

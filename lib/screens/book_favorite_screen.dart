@@ -1,4 +1,3 @@
-// Criando a tela BookFavoriteScreen
 import 'package:desafio2/providers/book_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:vocsy_epub_viewer/epub_viewer.dart';
@@ -16,7 +15,6 @@ class BookFavoriteScreen extends StatefulWidget {
 
 class _BookFavoriteScreenState extends State<BookFavoriteScreen> {
   Future<List<BookProvider>> _loadFavoriteBooks() async {
-    // Implemente a lógica para carregar apenas os livros favoritos
     List<BookProvider> favoriteBooks = [];
     final allBooks = await BookProvider.getBooks();
 
@@ -37,8 +35,7 @@ class _BookFavoriteScreenState extends State<BookFavoriteScreen> {
         await _downloadAndOpenBook(context, book);
       }
     } catch (e) {
-      print('Error handling book: $e');
-      // Lida com o erro (exibição de mensagem, etc.)
+      _handleError(e);
     }
   }
 
@@ -49,29 +46,17 @@ class _BookFavoriteScreenState extends State<BookFavoriteScreen> {
     // ignore: use_build_context_synchronously
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Ler Livro'),
-          content: Text('Você que abrir ${book.title}?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(context);
-                await _openBook(context, book, filePath);
+      builder: (context) => _buildAlertDialog(
+        title: 'Ler o Livro',
+        content: 'Você quer ler ${book.title}?',
+        onConfirm: () async {
+          Navigator.pop(context);
 
-                setState(() {});
-              },
-              child: const Text('Abrir'),
-            ),
-          ],
-        );
-      },
+          await _openBook(context, book, filePath);
+
+          setState(() {});
+        },
+      ),
     );
   }
 
@@ -79,30 +64,18 @@ class _BookFavoriteScreenState extends State<BookFavoriteScreen> {
       BuildContext context, BookProvider book) async {
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Download do Livro'),
-          content: Text('Você quer fazer o download de ${book.title}?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.pop(context);
+      builder: (context) => _buildAlertDialog(
+        title: 'Download de Livro',
+        content: 'Você quer fazer o download ${book.title}?',
+        onConfirm: () async {
+          Navigator.pop(context);
 
-                String filePath = await book.downloadBook(
-                    book.download_url, "${book.id}_${book.title}.epub");
-                await _openDownloadedBook(context, book);
-              },
-              child: const Text('Download'),
-            ),
-          ],
-        );
-      },
+          String filePath = await book.downloadBook(
+              book.download_url, "${book.id}_${book.title}.epub");
+
+          await _openDownloadedBook(context, book);
+        },
+      ),
     );
   }
 
@@ -134,11 +107,44 @@ class _BookFavoriteScreenState extends State<BookFavoriteScreen> {
     );
   }
 
+  void _handleError(dynamic error) {
+    print('Error handling book: $error');
+    showDialog(
+      context: context,
+      builder: (context) => _buildAlertDialog(
+        title: 'Erro',
+        content: 'Ocorreu um erro ao abrir o livro',
+        onConfirm: () => Navigator.pop(context),
+      ),
+    );
+  }
+
+  Widget _buildAlertDialog({
+    required String title,
+    required String content,
+    required VoidCallback onConfirm,
+  }) {
+    return AlertDialog(
+      title: Text(title),
+      content: Text(content),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        TextButton(
+          onPressed: onConfirm,
+          child: const Text('Confirmar'),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Livros Favoritos'),
+        title: const Text('Livros favoritos'),
         backgroundColor: Colors.deepOrange,
       ),
       body: FutureBuilder<List<BookProvider>>(
